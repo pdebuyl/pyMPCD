@@ -1,5 +1,6 @@
 from numpy.distutils.core import setup, Extension
 import os
+import sys
 import subprocess
 
 ISRELEASED = False
@@ -66,6 +67,14 @@ if not release:
     finally:
         a.close()
     return FULL_VERSION
+
+if sys.version_info[0] < 3:
+    import __builtin__ as builtins
+else:
+    import builtins
+
+# From numpy setup
+builtins.__PYMPCD_SETUP__ = True
 
 full_version = write_version_py()
 
