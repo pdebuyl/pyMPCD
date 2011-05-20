@@ -1,0 +1,11 @@
+*~
+*.o
+*.py[ocd]
+*.a
+.DS_Store?
+
+/pyMPCD/version.py
+/build
+/doc/build
+
+
