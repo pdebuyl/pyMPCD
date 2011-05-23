@@ -40,14 +40,18 @@ class MPCD_system():
     def __str__(self):
         return str(type(self))+' size '+str(self.N_cells)+' , '+str(self.so_N)+' solvent particles'
 
-    def init_v(self, temp):
+    def init_v(self, temp, boltz=True):
         """
         Initializes the particles according to a normal distribution of 
         temperature temp and resets the total velocity of the system.
+        If boltz is set to False, a uniform distribution is used instead
         """
-        self.so_v[:,:] = np.random.randn( self.so_v.shape[0], self.so_v.shape[1] ) * np.sqrt(temp)
-        #self.so_v[:,:] -= 0.5
-        #self.so_v[:,:] *= 2.*np.sqrt(3.*temp/2.)
+        if boltz:
+            self.so_v[:,:] = np.random.randn( self.so_v.shape[0], self.so_v.shape[1] ) * np.sqrt(temp)
+        else:
+            self.so_v[:,:] = np.random.rand( self.so_v.shape[0], self.so_v.shape[1] )
+            self.so_v[:,:] -= 0.5
+            self.so_v[:,:] *= 2.*np.sqrt(6.*temp/2.)
         tot_v = np.sum( self.so_v , axis=0 ) / self.so_v.shape[0]
         tot_v = tot_v.reshape( ( 1 , tot_v.shape[0] ) )
         self.so_v -= tot_v
