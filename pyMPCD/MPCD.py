@@ -11,6 +11,12 @@ class MPCD_system():
     The MPCD_system class contains all variables relevant for MPCD simulations: box information, periodic boundaries, particles positions, ...
     """
     def __init__( self, N_cells , density , a ):
+        """
+        Defines a MPCD_system with periodic boundary conditions.
+        N_cells is the number of cells in the 3 dimensions.
+        density is the reference density for initialization and for filling cells with virtual particles.
+        a is the linear cell size.
+        """
         self.N_cells = np.array( N_cells , dtype=np.int32)
         if (len(self.N_cells) != 3): raise Exception
         self.N_grid = self.N_cells + 1
@@ -245,6 +251,7 @@ class MPCD_system():
         Performs a full step of MPCD without gravitation, including the 
         streaming, taking into account the boundary conditions and the MPCD 
         collision step.
+        The streaming and binning steps are performed in Fortran.
         """
         #self.stream()
         mpcd.stream(self.so_r_f, self.so_v_f, self.tau)
