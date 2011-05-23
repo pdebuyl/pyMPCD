@@ -186,6 +186,7 @@ class MPCD_system():
         for ci in range(nn[0]):
             for cj in range(nn[1]):
                 for ck in range(nn[2]):
+                    # Choose an axis to perform the rotation
                     rand_axis = np.random.randint(0,3)
                     axis1 = ( rand_axis + 1 ) % 3
                     axis2 = ( rand_axis + 2 ) % 3
@@ -202,17 +203,20 @@ class MPCD_system():
                                 is_wall=True
                                 v_wall[:] = self.wall_v0[ i , min( local_i[i], 1 ) , : ]
                                 v_temp = float(self.wall_temp[ i , min( local_i[i] , 1 ) ])
+                    # number of particles in the cell
                     local_n = self.cells[ci,cj,ck]
+                    # c.o.m. velocity in the cell
                     local_v = self.v_com[ci,cj,ck,:].copy()
+                    # if cell is a wall, add virtual particles
                     if (is_wall):
                         if (local_n < self.density):
                             local_v = (
                                 (np.random.randn(3) * np.sqrt(v_temp * (self.density - local_n) ) )
                                 + v_wall*(self.density - local_n)
-                                #(local_v) * (self.density - local_n)
                                 + local_v * local_n
                                 ) / self.density
                             v_therm +=local_v
+                    # perform cell-wise collisions
                     for i in range(local_n):
                         part = self.par_list[ci,cj,ck,i]
                         self.so_v[part,:] -= local_v
