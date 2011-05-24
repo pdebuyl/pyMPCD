@@ -2,14 +2,33 @@
 """
 MPCD.py - This file contains the base class to perform MPCD simulations: MPCD_system.
 """
+## \namespace pyMPCD::MPCD
+# \brief MPCD.py - This file contains the base class to perform MPCD simulations: MPCD_system.
+#
+# MPCD methods define the basic 
+
 import numpy as np
 
-from MPCD_f import mpcd
+from MPCD_f import mpcd_mod
 
+## Defines all variables for a MPCD system
+#
+# A simulation box is either declared via MPCD_system or through one test_case or from a file.
+# 
+# \b Example
+# \code
+#import pyMPCD                               # import the pyMPCD package
+#box = pyMPCD.MPCD_system( (8,8,8), 10, 1.0) # Create a PBC system of 8x8x8 cells, density 10 and cell size 1.0
+# \endcode
 class MPCD_system():
     """
     The MPCD_system class contains all variables relevant for MPCD simulations: box information, periodic boundaries, particles positions, ...
     """
+    ## Initializes a MPCD_system
+    #
+    # \param N_cells a 3 elements list or tuple that contains the number of cells in each dimension.
+    # \param density an integer number that define the average number of particles per cell.
+    # \param a the linear cell size.
     def __init__( self, N_cells , density , a ):
         """
         Defines a MPCD_system with periodic boundary conditions.
@@ -17,21 +36,37 @@ class MPCD_system():
         density is the reference density for initialization and for filling cells with virtual particles.
         a is the linear cell size.
         """
+        ## Number of physical cells for the simulation.
         self.N_cells = np.array( N_cells , dtype=np.int32)
+        # Check the input for N_cells
         if (len(self.N_cells) != 3): raise Exception
+        ## The number of actual binning cells. Is higher than N_cells to allow for non-periodic systems.
         self.N_grid = self.N_cells + 1
+        ## The average density (number of particles per cell).
         self.density = int(density)
+        ## The total number of MPCD particles.
         self.so_N = np.prod( self.N_cells ) * self.density
+        ## The linear cell size.
         self.a = float(a)
+        ## The shift applied to the system.
         self.shift = np.zeros( (3,) , dtype=np.float64 )
+        ## NumPy array for the position of the MPCD solvent.
         self.so_r = np.zeros( (self.so_N , 3) , dtype=np.float64 )
+        ## A view to so_r in Fortran order.
         self.so_r_f = self.so_r.T
+        ## NumPy array for the velocity of the MPCD solvent.
         self.so_v = np.zeros( (self.so_N , 3) , dtype=np.float64 )
+        ## A view to so_v in Fortran order.
         self.so_v_f = self.so_v.T
+        ## To delete
         self.r0 = np.zeros( (3,) , dtype=np.float64 )
+        ## The size of the box.
         self.L = self.N_cells*self.a
+        ## The MPCD time step, used for streaming.
         self.tau = float(0.)
+        ## The number of particles in each cell.
         self.cells = np.zeros( self.N_grid, dtype=np.int32 )
+        ## A view to cells in Fortran order.
         self.cells_f = self.cells.T
         self.par_list = np.zeros( (self.N_grid[0], self.N_grid[1], self.N_grid[2], 64), dtype=np.int32 )
         self.par_list_f = self.par_list.T
@@ -46,6 +81,10 @@ class MPCD_system():
     def __str__(self):
         return str(type(self))+' size '+str(self.N_cells)+' , '+str(self.so_N)+' solvent particles'
 
+    ## Initializes the particles according to a normal or flat velocity profile.
+    # \param temp Initial temperature of the system.
+    # \param boltz if True or unset, use a normal velocity profile of temperature T.
+    #              Else, use a flat profile.
     def init_v(self, temp, boltz=True):
         """
         Initializes the particles according to a normal distribution of 
@@ -62,6 +101,7 @@ class MPCD_system():
         tot_v = tot_v.reshape( ( 1 , tot_v.shape[0] ) )
         self.so_v -= tot_v
 
+    ## Places particles in the simulation box at random according to a uniform distribution.
     def init_r(self):
         """
         Places particles in the simulation box at random according to a uniform distribution.
@@ -69,15 +109,16 @@ class MPCD_system():
         self.so_r[:,:] = np.random.rand( self.so_r.shape[0], self.so_r.shape[1] )
         self.so_r *= (self.a*self.N_cells).reshape( ( 1 , self.so_r.shape[1] ) )
 
+    ## Advances the particles according to their velocities.
     def stream(self):
-        """
-        Advances the particles according to their velocities.
-        """
+        """Advances the particles according to their velocities."""
         self.so_r[:] += self.so_v*self.tau
+
+    ## Advances the particles according to their velocities and a constant acceleration in the z direction.
+    # Also updates the velocities to take into account the acceleration.
     def accel(self):
         """
-        Advances the particles according to their velocities and a constant 
-        acceleration in the z direction.
+        Advances the particles according to their velocities and a constant acceleration in the z direction.
         Also updates the velocities to take into account the acceleration.
         """
         self.so_r[:] += self.so_v*self.tau + np.array( [0., 0., self.gravity] ).reshape( (1, 3) )*0.5*self.tau**2
@@ -87,6 +128,7 @@ class MPCD_system():
     def boundaries(self):
         """
         Corrects particles positions and velocities to take into account the boundary conditions.
+
         PBC keep the particles in the box by sending them to their periodic in-box location.
         Elastic walls reflect particles and reverse the velocities.
         """
@@ -258,11 +300,11 @@ class MPCD_system():
         The streaming and binning steps are performed in Fortran.
         """
         #self.stream()
-        mpcd.stream(self.so_r_f, self.so_v_f, self.tau)
+        mpcd_mod.stream(self.so_r_f, self.so_v_f, self.tau)
         self.boundaries()
         self.rand_shift()
         #self.fill_box()
-        mpcd.fill_box(self.so_r_f, self.cells_f, self.par_list_f, self.a, self.root)
+        mpcd_mod.fill_box(self.so_r_f, self.cells_f, self.par_list_f, self.a, self.root)
         self.compute_v_com()
         self.MPCD_step_axis()
 

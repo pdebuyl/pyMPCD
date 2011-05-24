@@ -1,6 +1,25 @@
+"""
+test_cases.py - This file contains test cases for the pyMPCD simulation package.
+"""
+## \namespace pyMPCD::test_cases
+# \brief test_cases.py - This file contains test cases for the pyMPCD simulation package.
+#
+# These test_cases are intented to demonstrate some of the capabilities of the 
+# package and to provide initialization of tests.
+#
+# \b Example of usage
+# \code
+#import pyMPCD
+#box = pyMPCD.test_cases.eight_PBC()
+#for i in range(10):
+#    box.one_full_step()
+# \endcode
+
 from pyMPCD import MPCD_system
 import numpy as np
 
+## Returns a 8**3 system with density 10 and temperature T=.33.
+# Periodic boundary conditions in x,y and z.
 def eight_PBC():
     """
     Returns a 8**3 system with density 10 and temperature T=.33.
@@ -14,6 +33,9 @@ def eight_PBC():
     a.init_v(.33)
     return a
 
+## Returns a 8**3 system with density 10 and temperature T=.33.
+# Periodic boundary conditions in y and z.
+# Thermostatted walls in direction x.
 def eight_PBC_wallx():
     """
     Returns a 8**3 system with density 10 and temperature T=.33.

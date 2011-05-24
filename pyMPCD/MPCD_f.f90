@@ -1,8 +1,21 @@
-module MPCD
+!> This module provides drop-in Fortran replacement for some functions of the pyMPCD
+!! package.
+!!
+!! The subroutines are given all variable explicitly, so that the code does not
+!! depend on the setting of global variables in the Fortran module.
+
+module mpcd_mod
   implicit none
 
 contains
-
+  
+  !> Advances the particles according to their velocities.
+  !!
+  !! @param r fortran-ordered view of the positions of the MPCD particles.
+  !! @param v fortran-ordered view of the velocities of the MPCD particles.
+  !! @param tau timestep for the MPCD streaming.
+  !! @param n number of particles of the r and v arrays. Becomes optional 
+  !! in the f2py generated fortran object.
   subroutine stream(r, v, tau, n)
     implicit none
     double precision, intent(inout) :: r(3,n), v(3,n)
@@ -17,6 +30,18 @@ contains
 
   end subroutine stream
 
+  !> Fills the cells of a MPCD box with the indices of the MPCD particles
+  !! that belong in them.
+  !!
+  !! @param r fortran-ordered view of the positions of the MPCD particles.
+  !! @param cells number of particles in each MPCD cell.
+  !! @param a linear cell size.
+  !! @param root the root of the 0th cell, including shifting.
+  !! @param n number of particles of the r array. Becomes optional 
+  !! in the f2py generated fortran object.
+  !! @param Nx number of cells in the x-direction.
+  !! @param Ny number of cells in the y-direction.
+  !! @param Nz number of cells in the z-direction.
   subroutine fill_box(r, cells, par_list, a, root, n, Nx, Ny, Nz)
     double precision, intent(in) :: r(3,N)
     integer, intent(inout) :: cells(Nz,Ny,Nx)
@@ -53,5 +78,5 @@ contains
 
   end subroutine fill_box
 
-end module MPCD
+end module mpcd_mod
 
