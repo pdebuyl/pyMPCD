@@ -2,8 +2,11 @@
 """
 pyMPCD - hydrodynamical simulations with MPCD
 """
+## \namespace pyMPCD::__init__
+# \brief __init__.py - This file initializes the pyMPCD module.
 
-# We first need to detect if we're being called as part of the numpy setup
+
+# We first need to detect if we're being called as part of the setup
 # procedure itself in a reliable manner.
 try:
     __PYMPCD_SETUP__

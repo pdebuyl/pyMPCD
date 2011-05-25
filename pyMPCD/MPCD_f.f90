@@ -48,7 +48,7 @@ contains
     integer, intent(inout) :: cells(Nz,Ny,Nx)
     integer, intent(inout) :: par_list(64,Nz,Ny,Nx)
     double precision, intent(in) :: a, root(3)
-    integer, intent(in) :: N
+    integer, intent(in) :: n
     integer, intent(in) :: Nx, Ny, Nz
 
     integer :: ci,cj,ck
@@ -57,7 +57,7 @@ contains
     cells = 0
     par_list = 0
 
-    do i=1,N
+    do i=1,n
        
        ci = floor( (r(1,i) - root(1)) / a ) + 1
        cj = floor( (r(2,i) - root(2)) / a ) + 1

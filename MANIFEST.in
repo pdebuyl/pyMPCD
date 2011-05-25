@@ -1,3 +1,6 @@
 include *.txt
 include examples/*.py
+include doc/doxy_conf
+include doc/index.doc
+include doc/suppress_docstrings.py
 

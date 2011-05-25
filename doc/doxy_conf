@@ -200,13 +200,13 @@ OPTIMIZE_OUTPUT_FOR_C  = NO
 # Java. For instance, namespaces will be presented as packages, qualified 
 # scopes will look different, etc.
 
-OPTIMIZE_OUTPUT_JAVA   = NO 
+OPTIMIZE_OUTPUT_JAVA   = YES 
 
 # Set the OPTIMIZE_FOR_FORTRAN tag to YES if your project consists of Fortran 
 # sources only. Doxygen will then generate output that is more tailored for 
 # Fortran.
 
-OPTIMIZE_FOR_FORTRAN   = NO
+OPTIMIZE_FOR_FORTRAN   = NO 
 
 # Set the OPTIMIZE_OUTPUT_VHDL tag to YES if your project consists of VHDL 
 # sources. Doxygen will then generate output that is tailored for 
@@ -277,7 +277,7 @@ TYPEDEF_HIDES_STRUCT   = NO
 # Private class members and static file members will be hidden unless 
 # the EXTRACT_PRIVATE and EXTRACT_STATIC tags are set to YES
 
-EXTRACT_ALL            = NO
+EXTRACT_ALL            = YES 
 
 # If the EXTRACT_PRIVATE tag is set to YES all private members of a class 
 # will be included in the documentation.
@@ -631,7 +631,6 @@ INPUT_FILTER           = "python suppress_docstrings.py"
 # is applied to all files.
 
 FILTER_PATTERNS        = 
-#FILTER_PATTERNS        = *.py="python /Users/pierre/doxypy-0.4.2/doxypy.py"
 
 # If the FILTER_SOURCE_FILES tag is set to YES, the input filter (if set using 
 # INPUT_FILTER) will be used to filter the input files when producing source 
@@ -659,7 +658,7 @@ INLINE_SOURCES         = NO
 # doxygen to hide any special comment blocks from generated source code 
 # fragments. Normal C and C++ comments will always remain visible.
 
-STRIP_CODE_COMMENTS    = YES
+STRIP_CODE_COMMENTS    = NO 
 
 # If the REFERENCED_BY_RELATION tag is set to YES 
 # then for each documented function all documented 
