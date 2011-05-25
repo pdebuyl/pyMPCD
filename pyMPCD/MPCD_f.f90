@@ -35,6 +35,7 @@ contains
   !!
   !! @param r fortran-ordered view of the positions of the MPCD particles.
   !! @param cells number of particles in each MPCD cell.
+  !! @param par_list the 0-based list of particles in each MPCD cell.
   !! @param a linear cell size.
   !! @param root the root of the 0th cell, including shifting.
   !! @param n number of particles of the r array. Becomes optional 
