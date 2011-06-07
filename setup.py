@@ -78,7 +78,8 @@ builtins.__PYMPCD_SETUP__ = True
 
 full_version = write_version_py()
 
-m1 = Extension('pyMPCD.MPCD_f', sources = [ 'pyMPCD/MPCD_f.f90' ] )
+m1 = Extension('pyMPCD.MPCD_f', sources = [ 'pyMPCD/MPCD_f.f90' ] ,
+               extra_compile_args=['-DF2PY_REPORT_ON_ARRAY_COPY=1'])
 
 setup(name="pyMPCD", version=full_version, 
       description="pyMPCD - Multiparticle Collision Dynamics", 
