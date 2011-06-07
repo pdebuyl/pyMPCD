@@ -1,7 +1,7 @@
 !> This module provides drop-in Fortran replacement for some functions of the pyMPCD
 !! package.
 !!
-!! The subroutines are given all variable explicitly, so that the code does not
+!! The subroutines are given all variables explicitly, so that the code does not
 !! depend on the setting of global variables in the Fortran module.
 
 module mpcd_mod
@@ -78,6 +78,66 @@ contains
 
 
   end subroutine fill_box
+
+  !>Exchanges the positions and velocities of two solvent particles.
+  !! @param r array of positions.
+  !! @param v array of velocities.
+  !! @param n number of particles in the arrays.
+  !! @param i index of the first particle to be exchanged.
+  !! @param j index of the second particle to be exchanged.
+  subroutine exchange_solvent(r, v, n, i, j)
+    implicit none
+    double precision, intent(inout) :: r(3,N)
+    double precision, intent(inout) :: v(3,N)
+    integer, intent(in) :: n
+    integer, intent(in) :: i,j
+
+    double precision :: x(3)
+
+    x = r(:,i)
+    r(:,i) = r(:,j)
+    r(:,j) = x
+
+    x = v(:,i)
+    v(:,i) = v(:,j)
+    v(:,j) = x
+
+  end subroutine exchange_solvent
+
+  !> Sorts the solvent in the x,y,z cell order.
+  !! @param r fortran-ordered view of the positions of the MPCD particles.
+  !! @param v fortran-ordered view of the velocities of the MPCD particles.
+  !! @param cells number of particles in each MPCD cell.
+  !! @param par_list the 0-based list of particles in each MPCD cell.
+  !! @param n number of particles of the r array. Becomes optional 
+  !! in the f2py generated fortran object.
+  !! @param Nx number of cells in the x-direction.
+  !! @param Ny number of cells in the y-direction.
+  !! @param Nz number of cells in the z-direction.
+  subroutine sort_solvent(r, v, cells, par_list, n, Nx, Ny, Nz)
+    implicit none
+    double precision, intent(inout) :: r(3,N), v(3,N)
+    integer, intent(in) :: cells(Nz,Ny,Nx)
+    integer, intent(in) :: par_list(64,Nz,Ny,Nx)
+    integer, intent(in) :: n
+    integer, intent(in) :: Nx, Ny, Nz
+
+    integer :: ci,cj,ck,i,array_idx, j
+
+    array_idx = 1
+    do ci=1,Nx
+       do cj=1,Ny
+          do ck=1,Nz
+             do i=1,cells(ck,cj,ci)
+                j = par_list(i,ck,cj,ci)+1
+                call exchange_solvent(r, v, n, j, array_idx)
+                array_idx = array_idx+1
+             end do
+          end do
+       end do
+    end do
+
+  end subroutine sort_solvent
 
 end module mpcd_mod
 

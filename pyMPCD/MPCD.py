@@ -267,6 +267,36 @@ class MPCD_system():
                         self.so_v[part,axis1] = -r_sign*temp
                         self.so_v[part,:] += local_v
      
+    ## Exchanges the positions and momenta of two solvent particles.
+    # \param i index of the first particle to be exchanged.
+    # \param j index of the second particle to be exchanged.
+    def exchange_solvent(self,i,j):
+        """
+        Exchanges the positions and momenta of two solvent particles.
+        """
+        tmp_copy = self.so_r[i,:].copy()
+        self.so_r[i,:] = self.so_r[j,:]
+        self.so_r[j,:] = tmp_copy
+        tmp_copy = self.so_v[i,:].copy()
+        self.so_v[i,:] = self.so_v[j,:]
+        self.so_v[j,:] = tmp_copy
+        
+    ## Sorts the solvent in the x,y,z cell order.
+    def sort_solvent(self):
+        """
+        Sorts the solvent in the x,y,z cell order.
+        """
+        nn = self.N_cells.copy()
+        nn += self.BC
+        array_idx = 0
+        for ci in range(nn[0]):
+            for cj in range(nn[1]):
+                for ck in range(nn[2]):
+                    local_n = self.cells[ci,cj,ck]
+                    for i in range(local_n):
+                        self.exchange_solvent(self.par_list[ci,cj,ck,i],array_idx)
+                        array_idx += 1
+
     def one_full_step(self):
         """
         Performs a full step of MPCD without gravitation, including the 
