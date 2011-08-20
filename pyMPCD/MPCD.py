@@ -74,8 +74,6 @@ class MPCD_system():
         self.so_v = np.zeros( (self.so_N , 3) , dtype=np.float64 )
         ## A view to so_v in Fortran order.
         self.so_v_f = self.so_v.T
-        ## To delete
-        self.r0 = np.zeros( (3,) , dtype=np.float64 )
         ## The size of the box.
         self.L = self.N_cells*self.a
         ## The MPCD time step, used for streaming.
