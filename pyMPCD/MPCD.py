@@ -45,7 +45,8 @@ class MPCD_system():
     # \param N_cells a 3 elements list or tuple that contains the number of cells in each dimension.
     # \param density an integer number that define the average number of particles per cell.
     # \param a the linear cell size.
-    def __init__( self, N_cells , density , a ):
+    # \param N_species The number of solvent species to consider.
+    def __init__( self, N_cells , density , a , N_species = 1):
         """
         Defines a MPCD_system with periodic boundary conditions.
         N_cells is the number of cells in the 3 dimensions.
@@ -64,6 +65,10 @@ class MPCD_system():
         self.so_N = np.prod( self.N_cells ) * self.density
         ## The linear cell size.
         self.a = float(a)
+        ## The number of solvent species
+        self.N_species = N_species
+        # Check that N_species is valid
+        if (N_species < 1): raise Exception
         ## The shift applied to the system.
         self.shift = np.zeros( (3,) , dtype=np.float64 )
         ## NumPy array for the position of the MPCD solvent.
@@ -74,6 +79,10 @@ class MPCD_system():
         self.so_v = np.zeros( (self.so_N , 3) , dtype=np.float64 )
         ## A view to so_v in Fortran order.
         self.so_v_f = self.so_v.T
+        ## NumPy array for the species.
+        self.so_species = np.zeros( (self.so_N, ), dtype=np.int32)
+        ## NumPy array holding the mass of each species.
+        self.so_mass = np.ones( (self.N_species, ), dtype=np.float64)
         ## The size of the box.
         self.L = self.N_cells*self.a
         ## The MPCD time step, used for streaming.
@@ -107,11 +116,12 @@ class MPCD_system():
         """
         if boltz:
             self.so_v[:,:] = np.random.randn( self.so_v.shape[0], self.so_v.shape[1] ) * np.sqrt(temp)
+            self.so_v /= np.sqrt(self.so_mass[self.so_species]).reshape( (self.so_N, 1) )
         else:
             self.so_v[:,:] = np.random.rand( self.so_v.shape[0], self.so_v.shape[1] )
             self.so_v[:,:] -= 0.5
             self.so_v[:,:] *= 2.*np.sqrt(6.*temp/2.)
-        tot_v = np.sum( self.so_v , axis=0 ) / self.so_v.shape[0]
+        tot_v = np.sum( self.so_v*(self.so_mass[self.so_species]).reshape( (self.so_N, 1) ) , axis=0 ) / self.so_mass[self.so_species].sum()
         tot_v = tot_v.reshape( ( 1 , tot_v.shape[0] ) )
         self.so_v -= tot_v
 
@@ -214,7 +224,9 @@ class MPCD_system():
             my_n = self.cells[ cijk[0] , cijk[1] , cijk[2] ]
             self.par_list[ cijk[0] , cijk[1] , cijk[2] , my_n ] = i
             self.cells[ cijk[0] , cijk[1] , cijk[2] ] = my_n + 1
-            
+
+    ## Computes the center of mass velocity for all the cells in the system.
+    # \param self A MPCD_system instance.
     def compute_v_com(self):
         """
         Computes the c.o.m. velocity for all cells.
@@ -223,12 +235,14 @@ class MPCD_system():
         for ci in range(self.N_grid[0]):
             for cj in range(self.N_grid[1]):
                 for ck in range(self.N_grid[2]):
+                    mass_local = 0.
                     v_local = np.zeros( (3, ) , dtype=np.float64)
                     n_local = self.cells[ci,cj,ck]
                     for i in range( n_local ):
                         part = self.par_list[ci,cj,ck,i]
-                        v_local += self.so_v[part,:]
-                    if (n_local > 0): self.v_com[ci,cj,ck,:] = v_local/n_local
+                        v_local += self.so_v[part,:]*self.so_mass[self.so_species[part]]
+                        mass_local += self.so_mass[self.so_species[part]]
+                    if (n_local > 0): self.v_com[ci,cj,ck,:] = v_local/mass_local
         
     def MPCD_step_axis(self):
         """
@@ -281,12 +295,12 @@ class MPCD_system():
                         self.so_v[part,axis1] = -r_sign*temp
                         self.so_v[part,:] += local_v
      
-    ## Exchanges the positions and momenta of two solvent particles.
+    ## Exchanges the positions, momenta and species of two solvent particles.
     # \param i index of the first particle to be exchanged.
     # \param j index of the second particle to be exchanged.
     def exchange_solvent(self,i,j):
         """
-        Exchanges the positions and momenta of two solvent particles.
+        Exchanges the positions, momenta and species of two solvent particles.
         """
         tmp_copy = self.so_r[i,:].copy()
         self.so_r[i,:] = self.so_r[j,:]
@@ -294,6 +308,9 @@ class MPCD_system():
         tmp_copy = self.so_v[i,:].copy()
         self.so_v[i,:] = self.so_v[j,:]
         self.so_v[j,:] = tmp_copy
+        tmp_copy = self.so_species[i].copy()
+        self.so_species[i] = self.so_species[j]
+        self.so_species[j] = tmp_copy
         
     ## Sorts the solvent in the x,y,z cell order.
     def sort_solvent(self):
