@@ -84,8 +84,8 @@ def eight_PBC_wallx_tempgrad_8():
     a.tau = .5
     a.wall_v0[0,0,:] = np.array( [ 0., .0, 0. ] )
     a.wall_v0[0,1,:] = np.array( [ 0., -.0, 0. ] )
-    a.wall_temp[0,0] = 0.33-2.
-    a.wall_temp[0,1] = 0.33+2.
+    a.wall_temp[0,0] = 0.33*1.2
+    a.wall_temp[0,1] = 0.33*0.8
     a.init_r()
     a.init_v(.33)
     a.BC[0] = 1
