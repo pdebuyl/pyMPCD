@@ -79,6 +79,8 @@ class MPCD_system():
         self.so_v = np.zeros( (self.so_N , 3) , dtype=np.float64 )
         ## A view to so_v in Fortran order.
         self.so_v_f = self.so_v.T
+        ## The local temperature in the cells.
+        self.cells_temperature = np.zeros( (self.N_grid[0], self.N_grid[1], self.N_grid[2]), dtype=np.float64 )
         ## NumPy array for the species.
         self.so_species = np.zeros( (self.so_N, ), dtype=np.int32)
         ## NumPy array holding the mass of each species.
@@ -243,7 +245,27 @@ class MPCD_system():
                         v_local += self.so_v[part,:]*self.so_mass[self.so_species[part]]
                         mass_local += self.so_mass[self.so_species[part]]
                     if (n_local > 0): self.v_com[ci,cj,ck,:] = v_local/mass_local
-        
+
+
+    ## Computes the temperature of the cells.
+    # The temperature is computed as \f$ \frac{ \sum_{i=1}^{N^\xi} m_i (v_i-v_0) ^2 }{N^\xi-1} \f$
+    # where \f$ v_0 \f$ is the center of mass velocity of the cell.
+    # \param self A MPCD_system instance.
+    def compute_cells_temperature(self):
+        for ci in range(self.N_grid[0]):
+            for cj in range(self.N_grid[1]):
+                for ck in range(self.N_grid[2]):
+                    v_local = self.v_com[ci,cj,ck,:]
+                    T_local = 0.
+                    n_local = self.cells[ci,cj,ck]
+                    for i in range(n_local):
+                        part = self.par_list[ci,cj,ck,i]
+                        T_local += self.so_mass[self.so_species[part]]*((self.so_v[part,:]-v_local)**2).sum()
+                    if (n_local>1):
+                        self.cells_temperature[ci,cj,ck] = T_local/(3.*(n_local-1))
+                    elif (n_local==1):
+                        self.cells_temperature[ci,cj,ck] = 0.
+
     def MPCD_step_axis(self):
         """
         Performs a MPCD collision step where the axis is one of x, y or z, chosen at random.
