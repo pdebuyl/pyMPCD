@@ -99,17 +99,20 @@ contains
   !>Exchanges the positions and velocities of two solvent particles.
   !! @param r array of positions.
   !! @param v array of velocities.
+  !! @param species array of species.
   !! @param n number of particles in the arrays.
   !! @param i index of the first particle to be exchanged.
   !! @param j index of the second particle to be exchanged.
-  subroutine exchange_solvent(r, v, n, i, j)
+  subroutine exchange_solvent(r, v, species, n, i, j)
     implicit none
     double precision, intent(inout) :: r(3,N)
     double precision, intent(inout) :: v(3,N)
+    integer, intent(inout) :: species(N)
     integer, intent(in) :: n
     integer, intent(in) :: i,j
 
     double precision :: x(3)
+    integer :: s
 
     x = r(:,i)
     r(:,i) = r(:,j)
@@ -119,11 +122,16 @@ contains
     v(:,i) = v(:,j)
     v(:,j) = x
 
+    s = species(i)
+    species(i) = species(j)
+    species(j) = s
+
   end subroutine exchange_solvent
 
   !> Sorts the solvent in the x,y,z cell order.
   !! @param r fortran-ordered view of the positions of the MPCD particles.
   !! @param v fortran-ordered view of the velocities of the MPCD particles.
+  !! @param species view of the species data of the MPCD particles.
   !! @param cells number of particles in each MPCD cell.
   !! @param par_list the 0-based list of particles in each MPCD cell.
   !! @param n number of particles of the r array. Becomes optional 
@@ -131,9 +139,10 @@ contains
   !! @param Nx number of cells in the x-direction.
   !! @param Ny number of cells in the y-direction.
   !! @param Nz number of cells in the z-direction.
-  subroutine sort_solvent(r, v, cells, par_list, n, Nx, Ny, Nz)
+  subroutine sort_solvent(r, v, species, cells, par_list, n, Nx, Ny, Nz)
     implicit none
     double precision, intent(inout) :: r(3,N), v(3,N)
+    integer, intent(inout) :: species(N)
     integer, intent(in) :: cells(Nz,Ny,Nx)
     integer, intent(in) :: par_list(64,Nz,Ny,Nx)
     integer, intent(in) :: n
@@ -147,7 +156,7 @@ contains
           do ck=1,Nz
              do i=1,cells(ck,cj,ci)
                 j = par_list(i,ck,cj,ci)+1
-                call exchange_solvent(r, v, n, j, array_idx)
+                call exchange_solvent(r, v, species, n, j, array_idx)
                 array_idx = array_idx+1
              end do
           end do
