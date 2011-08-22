@@ -96,7 +96,6 @@ class MPCD_system():
         self.par_list = np.zeros( (self.N_grid[0], self.N_grid[1], self.N_grid[2], 64), dtype=np.int32 )
         self.par_list_f = self.par_list.T
         self.v_com = np.zeros( (self.N_grid[0], self.N_grid[1], self.N_grid[2], 3), dtype=np.float64 )
-        self.shift = np.zeros( (3,), dtype=np.float64)
         self.root = np.zeros( (3,), dtype=np.float64)
         self.BC = np.zeros( (3,) , dtype=np.int32 ) # type of wall. 0 = PBC , 1 = elastic collision with virtual particles.
         self.wall_v0 = np.zeros( (3, 2, 3) , dtype=np.float64 ) # mean velocity on each wall wall. indices = wall dir (x,y,z) , wall low/high , v
