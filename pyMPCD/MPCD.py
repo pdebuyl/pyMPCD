@@ -139,6 +139,11 @@ class MPCD_system():
         """Advances the particles according to their velocities."""
         self.so_r[:] += self.so_v*self.tau
 
+    ## Advances the particles according to their velocities by calling a Fortran routine.
+    def stream_f(self):
+        """"Advances the particles according to their velocities by calling a Fortran routine."""
+        mpcd_mod.stream(self.so_r_f, self.so_v_f, self.tau)
+
     ## Advances the particles according to their velocities and a constant acceleration in the z direction.
     # Also updates the velocities to take into account the acceleration.
     def accel(self):
@@ -213,9 +218,10 @@ class MPCD_system():
             if (self.BC[j] == 0):
                 if ( cijk[j] >= my_n ): cijk[j] -= my_n
 
+    ## Bins the particles into the MPCD cells.
     def fill_box(self):
         """
-        Bins the particles into cells.
+        Bins the particles into the MPCD cells.
         """
         cijk = np.zeros( (3,) , dtype=np.int32 )
         self.cells[:] = 0
@@ -225,6 +231,11 @@ class MPCD_system():
             my_n = self.cells[ cijk[0] , cijk[1] , cijk[2] ]
             self.par_list[ cijk[0] , cijk[1] , cijk[2] , my_n ] = i
             self.cells[ cijk[0] , cijk[1] , cijk[2] ] = my_n + 1
+
+    ## Bins the particles into the MPCD cells by calling a Fortran routine.
+    def fill_box_f(self):
+        """"Bins the particles into the MPCD cells by calling a Fortran routine."""
+        mpcd_mod.fill_box(self.so_r_f, self.cells_f, self.par_list_f, self.a, self.root)
 
     ## Computes the center of mass velocity for all the cells in the system.
     # \param self A MPCD_system instance.
@@ -381,12 +392,10 @@ class MPCD_system():
         collision step.
         The streaming and binning steps are performed in Fortran.
         """
-        #self.stream()
-        mpcd_mod.stream(self.so_r_f, self.so_v_f, self.tau)
+        self.stream_f()
         self.boundaries()
         self.rand_shift()
-        #self.fill_box()
-        mpcd_mod.fill_box(self.so_r_f, self.cells_f, self.par_list_f, self.a, self.root)
+        self.fill_box_f()
         self.compute_v_com()
         self.MPCD_step_axis()
 
