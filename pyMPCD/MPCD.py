@@ -93,13 +93,21 @@ class MPCD_system():
         self.cells = np.zeros( self.N_grid, dtype=np.int32 )
         ## A view to cells in Fortran order.
         self.cells_f = self.cells.T
+        ## The list of particles, per cell.
         self.par_list = np.zeros( (self.N_grid[0], self.N_grid[1], self.N_grid[2], 64), dtype=np.int32 )
+        ## A view to par_list in Fortran order.
         self.par_list_f = self.par_list.T
+        ## The cell-wise center-of-mass velocity.
         self.v_com = np.zeros( (self.N_grid[0], self.N_grid[1], self.N_grid[2], 3), dtype=np.float64 )
+        ## The origin of the grid.
         self.root = np.zeros( (3,), dtype=np.float64)
-        self.BC = np.zeros( (3,) , dtype=np.int32 ) # type of wall. 0 = PBC , 1 = elastic collision with virtual particles.
-        self.wall_v0 = np.zeros( (3, 2, 3) , dtype=np.float64 ) # mean velocity on each wall wall. indices = wall dir (x,y,z) , wall low/high , v
-        self.wall_temp = np.zeros( (3, 2) , dtype=np.float64 ) # temperatures for the virtual particles on each wall side. indices = wall dir (x,y,z), wall low/high
+        ## Boundary conditions, in the three directions. 0 = PBC , 1 = elastic collision with virtual particles.
+        self.BC = np.zeros( (3,) , dtype=np.int32 )
+        ## Wall velocity, on each wall. indices = wall dir (x,y,z) , wall low/high , v.
+        self.wall_v0 = np.zeros( (3, 2, 3) , dtype=np.float64 )
+        ## Wall temperature for the virtual particles on each wall side. indices = wall dir (x,y,z), wall low/high.
+        self.wall_temp = np.zeros( (3, 2) , dtype=np.float64 )
+        ## Magnitude of the acceleration provided by gravity, if applicable.
         self.gravity = float(0.)
 
     def __str__(self):
@@ -155,6 +163,7 @@ class MPCD_system():
         self.so_v[:] += np.array( [0., 0., self.gravity] ).reshape( (1, 3) )*self.tau
 
 
+    ## Corrects particles positions and velocities to take into account the boundary conditions.
     def boundaries(self):
         """
         Corrects particles positions and velocities to take into account the boundary conditions.
