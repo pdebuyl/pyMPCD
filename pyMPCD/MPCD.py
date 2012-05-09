@@ -24,6 +24,7 @@ MPCD.py - This file contains the base class to perform MPCD simulations: MPCD_sy
 # MPCD methods define the basic 
 
 import numpy as np
+from scipy.misc import factorial
 
 from MPCD_f import mpcd_mod
 
@@ -109,9 +110,48 @@ class MPCD_system():
         self.wall_temp = np.zeros( (3, 2) , dtype=np.float64 )
         ## Magnitude of the acceleration provided by gravity, if applicable.
         self.gravity = float(0.)
+        ## Number of chemical reactions to consider.
+        self.N_reactions = 0
+        ## Kind of chemical reaction.
+        self.reaction_kind = []
+        ## Rates for the chemical reactions.
+        self.rates = []
+        ## Stoechiometry for reactants.
+        self.reactants = []
+        ## Stoechiometry for products.
+        self.products = []
 
     def __str__(self):
         return str(type(self))+' size '+str(self.N_cells)+' , '+str(self.so_N)+' solvent particles'
+
+    def add_reaction(self, rate, reactants, products):
+        if ( not (len(reactants) == len(products) == self.N_species) ):
+            print("Bad input for add_reaction")
+            return
+        if ( (min(reactants)<0) or (min(products)<0) ):
+            print("Bad input for add_reaction")
+            return
+        N_reactants = np.sum(reactants)
+        N_products = np.sum(products)
+        if ( (N_reactants==1) and (N_products==1) ):
+            kind = 0
+        elif ( reactants[0]==1 and reactants[1]==2 and products[1]==3):
+            kind = 1
+        else:
+            print("reaction type not supported in add_reaction")
+            return
+
+        self.N_reactions += 1
+        self.reaction_kind.append(kind)
+        self.rates.append(rate)
+        self.reactants.append(reactants)
+        self.products.append(products)
+
+    def close_reaction(self):
+        if (self.N_reactions > 0):
+            self.rates = np.array(self.rates)
+            self.reactants = np.array(self.reactants,ndmin=2)
+            self.products = np.array(self.products,ndmin=2)
 
     ## Initializes the particles according to a normal or flat velocity profile.
     # \param temp Initial temperature of the system.
@@ -294,6 +334,8 @@ class MPCD_system():
         nn += self.BC
         is_wall = False
         v_wall = np.zeros( (3,) )
+        local_N = np.zeros( (self.N_species,) , dtype=np.int32)
+        amu = np.zeros( (self.N_reactions,), dtype=np.float64)
         for ci in range(nn[0]):
             for cj in range(nn[1]):
                 for ck in range(nn[2]):
@@ -328,6 +370,7 @@ class MPCD_system():
                                 ) / self.density
                             v_therm +=local_v
                     # perform cell-wise collisions
+                    local_N *= 0
                     for i in range(local_n):
                         part = self.par_list[ci,cj,ck,i]
                         self.so_v[part,:] -= local_v
@@ -335,6 +378,53 @@ class MPCD_system():
                         self.so_v[part,axis2] = r_sign*self.so_v[part,axis1]
                         self.so_v[part,axis1] = -r_sign*temp
                         self.so_v[part,:] += local_v
+                        local_N[self.so_species[part]] += 1
+                    # evaluate reaction probability
+                    a0 = 0.
+                    for i in range(self.N_reactions):
+                        amu[i] = self.combi( i, local_N )*self.rates[i]
+                        a0 += amu[i]
+                    P_something = a0*self.tau
+                    reac = -1
+                    if (np.random.rand() < P_something):
+                        amu /= a0
+                        amu = np.cumsum(amu)
+                        x = np.random.rand()
+                        for i in range(self.N_reactions):
+                            if (x < amu[i]):
+                                reac = i
+                                break
+                    # apply reaction reac
+                    if (reac>=0):
+                        if (self.reaction_kind[reac]==0):
+                            reac_s = np.where(self.reactants[i]==1)[0][0]
+                            prod_s = np.where(self.products[i]==1)[0][0]
+                            for i in range(local_n):
+                                part = self.par_list[ci,cj,ck,i]
+                                if (self.so_species[part]==reac_s):
+                                    self.so_species[part] = prod_s
+                                    break
+                        elif (self.reaction_kind[reac]==1):
+                            reac_s = np.where(self.reactants[i]==1)[0][0]
+                            prod_s = np.where(self.products[i]==3)[0][0]
+                            for i in range(local_n):
+                                part = self.par_list[ci,cj,ck,i]
+                                if (self.so_species[part]==reac_s):
+                                    self.so_species[part] = prod_s
+                                    break
+                        else:
+                            raise Exception
+
+    def combi(self, reac, N):
+        R = self.reactants[reac]
+        P = self.products[reac]
+        r = 1.0
+        for i in range(self.N_species):
+            if ( N[i] < R[i] ):
+                return 0
+            r *= factorial(N[i],exact=1)
+            r /= factorial(N[i]-R[i],exact=1)
+        return r
      
     ## Exchanges the positions, momenta and species of two solvent particles.
     # \param i index of the first particle to be exchanged.
