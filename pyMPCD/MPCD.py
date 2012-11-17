@@ -210,6 +210,20 @@ class MPCD_system():
         self.shift[:] = 0.
         self.root[:] = self.shift[:] - self.a
 
+    def one_shift(self):
+        """
+        Sets the shift to one cell unit.
+        """
+        self.shift[:] = self.a
+        self.root[:] = self.shift[:] - self.a
+
+    def half_shift(self):
+        """
+        Sets the shift to half a cell unit.
+        """
+        self.shift[:] = self.a/2.
+        self.root[:] = self.shift[:] - self.a
+
     def rand_shift(self):
         """
         Applies a random shift in [0:a[ to the system.
