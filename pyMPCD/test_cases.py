@@ -33,6 +33,7 @@ test_cases.py - This file contains test cases for the pyMPCD simulation package.
 # \endcode
 
 from pyMPCD import MPCD_system
+from pyMPCD.MPCD import BC_PERIODIC, BC_WALL
 import numpy as np
 
 ## Returns a 8**3 system with density 10 and temperature T=.33.
@@ -42,7 +43,7 @@ def eight_PBC():
     Returns a 8**3 system with density 10 and temperature T=.33.
     Periodic boundary conditions in x,y and z.
     """
-    a = MPCD_system( (8,8,8) , 10, 1.)
+    a = MPCD_system( (8,8,8) , 10, 1., 1./3.)
     a.null_shift()
     print a
     a.tau = .5
@@ -59,17 +60,17 @@ def eight_PBC_wallx():
     Periodic boundary conditions in y and z.
     Thermostatted walls in direction x.
     """
-    a = MPCD_system( (8,8,8) , 10, 1.)
+    a = MPCD_system( (8,8,8) , 10, 1., 1./3.)
     a.null_shift()
     print a
     a.tau = .5
-    a.wall_v0[0,0,:] = np.array( [ 0., .0, 0. ] )
-    a.wall_v0[0,1,:] = np.array( [ 0., -.0, 0. ] )
-    a.wall_temp[0,0] = 0.33
-    a.wall_temp[0,1] = 0.33
+    a.walls.v[0,0,:] = np.array( [ 0., .0, 0. ] )
+    a.walls.v[0,1,:] = np.array( [ 0., -.0, 0. ] )
+    a.walls.T[0,0] = 0.33
+    a.walls.T[0,1] = 0.33
     a.init_r()
     a.init_v(.33)
-    a.BC[0] = 1
+    a.walls.BC[0] = BC_WALL
     return a
 
 def eight_PBC_wallx_tempgrad_8():
@@ -78,17 +79,17 @@ def eight_PBC_wallx_tempgrad_8():
     Periodic boundary conditions in y and z.
     Thermostatted walls in direction x with temperature of .13 and .53.
     """
-    a = MPCD_system( (32,8,8) , 10, 1.)
+    a = MPCD_system( (32,8,8) , 10, 1., 1./3.)
     a.null_shift()
     print a
     a.tau = .5
-    a.wall_v0[0,0,:] = np.array( [ 0., .0, 0. ] )
-    a.wall_v0[0,1,:] = np.array( [ 0., -.0, 0. ] )
-    a.wall_temp[0,0] = 0.37
-    a.wall_temp[0,1] = 0.33
+    a.walls.v[0,0,:] = np.array( [ 0., .0, 0. ] )
+    a.walls.v[0,1,:] = np.array( [ 0., -.0, 0. ] )
+    a.walls.T[0,0] = 0.37
+    a.walls.T[0,1] = 0.33
     a.init_r()
     a.init_v(.35)
-    a.BC[0] = 1
+    a.walls.BC[0] = BC_WALL
     return a
 
 def eight_PBC_wallx_sheary():
@@ -97,16 +98,16 @@ def eight_PBC_wallx_sheary():
     Periodic boundary conditions in y and z.
     Thermostatted walls in direction x applying a shear in the y direction.
     """
-    a = MPCD_system( (8,8,8) , 10, 1.)
+    a = MPCD_system( (8,8,8) , 10, 1.,1./3.)
     a.null_shift()
     print a
     a.tau = .5
-    a.wall_v0[0,0,:] = np.array( [ 0., .2, 0. ] )
-    a.wall_v0[0,1,:] = np.array( [ 0., -.2, 0. ] )
-    a.wall_temp[0,0] = 0.33
-    a.wall_temp[0,1] = 0.33
+    a.walls.v[0,0,:] = np.array( [ 0., .2, 0. ] )
+    a.walls.v[0,1,:] = np.array( [ 0., -.2, 0. ] )
+    a.walls.T[0,0] = 0.33
+    a.walls.T[0,1] = 0.33
     a.init_r()
     a.init_v(.33)
-    a.BC[0] = 1
+    a.walls.BC[0] = BC_WALL
     return a
 

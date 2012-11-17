@@ -27,6 +27,31 @@ import numpy as np
 
 from MPCD_f import mpcd_mod
 
+# Define constants
+BC_PERIODIC=0
+BC_WALL=1
+BC_WALL_GRAVITY=2
+
+## Defines properties of wall for a simulation box
+#
+class Walls:
+    ## Initializes walls
+    #
+    # The temperature is mandatory. All omitted velocities are set to zero.
+    def __init__(self,Tin, vx=None, vy=None, vz=None, BCx=None, BCy=None, BCz=None):
+        self.T = np.ones((3,2), dtype=np.float64)
+        self.v = np.zeros((3,2,3), dtype=np.float64)
+        self.BC = np.zeros((3,), dtype=np.int32)
+        self.BC.fill(BC_PERIODIC)
+        self.T *= Tin
+        if vx: self.v[0] = vx
+        if vy: self.v[1] = vy
+        if vz: self.v[2] = vz
+        if BCx: self.BC[0] = BCx
+        if BCy: self.BC[1] = BCy
+        if BCz: self.BC[2] = BCz
+
+
 ## Defines all variables for a MPCD system
 #
 # A simulation box is either declared via MPCD_system or through one test_case or from a file.
@@ -46,7 +71,8 @@ class MPCD_system():
     # \param density an integer number that define the average number of particles per cell.
     # \param a the linear cell size.
     # \param N_species The number of solvent species to consider.
-    def __init__( self, N_cells , density , a , N_species = 1):
+    # \param T The temperature of the system.
+    def __init__( self, N_cells , density , a , T, N_species = 1):
         """
         Defines a MPCD_system with periodic boundary conditions.
         N_cells is the number of cells in the 3 dimensions.
@@ -69,6 +95,8 @@ class MPCD_system():
         self.N_species = N_species
         # Check that N_species is valid
         if (N_species < 1): raise Exception
+        ## Temperature
+        self.T = T
         ## The shift applied to the system.
         self.shift = np.zeros( (3,) , dtype=np.float64 )
         ## NumPy array for the position of the MPCD solvent.
@@ -101,12 +129,8 @@ class MPCD_system():
         self.v_com = np.zeros( (self.N_grid[0], self.N_grid[1], self.N_grid[2], 3), dtype=np.float64 )
         ## The origin of the grid.
         self.root = np.zeros( (3,), dtype=np.float64)
-        ## Boundary conditions, in the three directions. 0 = PBC , 1 = elastic collision with virtual particles.
-        self.BC = np.zeros( (3,) , dtype=np.int32 )
-        ## Wall velocity, on each wall. indices = wall dir (x,y,z) , wall low/high , v.
-        self.wall_v0 = np.zeros( (3, 2, 3) , dtype=np.float64 )
-        ## Wall temperature for the virtual particles on each wall side. indices = wall dir (x,y,z), wall low/high.
-        self.wall_temp = np.zeros( (3, 2) , dtype=np.float64 )
+        ## Defining walls.
+        self.walls = Walls(self.T)
         ## Magnitude of the acceleration provided by gravity, if applicable.
         self.gravity = float(0.)
 
@@ -172,9 +196,9 @@ class MPCD_system():
         Elastic walls reflect particles and reverse the velocities.
         """
         for i in range(3): # take each dim
-            if (self.BC[i] == 0): # if PBC, simply appy x = mod( x , L ) to keep particles in the box
+            if (self.walls.BC[i] == BC_PERIODIC): # if PBC, simply appy x = mod( x , L ) to keep particles in the box
                 self.so_r[:,i] = np.remainder( self.so_r[:,i] , self.L[i] )
-            elif (self.BC[i] == 1): # if elastic wall, reflect "too high" particles around L and "too low" particles around 0
+            elif (self.walls.BC[i] == BC_WALL): # if elastic wall, reflect "too high" particles around L and "too low" particles around 0
                 j_out = ( self.so_r[:,i] > self.L[i] )
                 self.so_r[j_out,i] = 2.*self.L[i] - self.so_r[j_out,i]
                 self.so_v[j_out,i] = - self.so_v[j_out,i]
@@ -182,7 +206,7 @@ class MPCD_system():
                 self.so_r[j_out,i] =  - self.so_r[j_out,i]
                 self.so_v[j_out,i] =  - self.so_v[j_out,i]
             else:
-                print "unknown boundary condition ", self.BC[i]
+                print "unknown boundary condition ", self.walls.BC[i]
                 raise Exception
 
     def check_in_box(self):
@@ -238,7 +262,7 @@ class MPCD_system():
         np.floor( (self.so_r[i,:] - self.root) / self.a , cijk )
         for j in range(3):
             my_n = self.N_cells[j]
-            if (self.BC[j] == 0):
+            if (self.walls.BC[j] == BC_PERIODIC):
                 if ( cijk[j] >= my_n ): cijk[j] -= my_n
 
     ## Bins the particles into the MPCD cells.
@@ -305,7 +329,7 @@ class MPCD_system():
         """
         v_therm = np.zeros((3,))
         nn = self.N_cells.copy()
-        nn += self.BC
+        nn += self.walls.BC
         is_wall = False
         v_wall = np.zeros( (3,) )
         for ci in range(nn[0]):
@@ -323,11 +347,11 @@ class MPCD_system():
                     is_wall = False
                     local_i = [ ci , cj , ck ]
                     for i in range(3):
-                        if (self.BC[i]==1):
+                        if (self.walls.BC[i]==BC_WALL):
                             if ( (local_i[i]==0) or (local_i[i]==nn[i]-1) ):
                                 is_wall=True
-                                v_wall[:] = self.wall_v0[ i , min( local_i[i], 1 ) , : ]
-                                v_temp = float(self.wall_temp[ i , min( local_i[i] , 1 ) ])
+                                v_wall[:] = self.walls.v[ i , min( local_i[i], 1 ) , : ]
+                                v_temp = float(self.walls.T[ i , min( local_i[i] , 1 ) ])
                     # number of particles in the cell
                     local_n = self.cells[ci,cj,ck]
                     # c.o.m. velocity in the cell
@@ -373,7 +397,7 @@ class MPCD_system():
         Sorts the solvent in the x,y,z cell order.
         """
         nn = self.N_cells.copy()
-        nn += self.BC
+        nn += self.walls.BC
         array_idx = 0
         for ci in range(nn[0]):
             for cj in range(nn[1]):
