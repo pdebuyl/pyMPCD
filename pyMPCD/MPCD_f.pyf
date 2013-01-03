@@ -1,0 +1,44 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+module mpcd_f ! in pyMPCD/MPCD_f.f90
+    type(walls_t) :: walls
+    type walls_t ! in pyMPCD/MPCD_f.f90:mpcd_f
+        double precision dimension(3,2,3) :: v
+        double precision dimension(2,3) :: t
+        integer dimension(3) :: bc
+    end type walls_t
+    subroutine wrap_set_walls(v,t,bc) ! in pyMPCD/MPCD_f.f90:mpcd_f
+        double precision dimension(3,2,3),intent(in) :: v
+        double precision dimension(2,3),intent(in) :: t
+        integer dimension(3),intent(in) :: bc
+    end subroutine wrap_set_walls
+    subroutine stream(r,v,tau,n) ! in pyMPCD/MPCD_f.f90:mpcd_f
+        double precision dimension(3,n),intent(inout) :: r
+        double precision dimension(3,n),intent(inout),depend(n) :: v
+        double precision intent(in) :: tau
+        integer, optional,intent(in),check(shape(r,1)==n),depend(r) :: n=shape(r,1)
+    end subroutine stream
+    subroutine exchange_solvent(r,v,species,n,i,j) ! in pyMPCD/MPCD_f.f90:mpcd_f
+        double precision dimension(3,n),intent(inout) :: r
+        double precision dimension(3,n),intent(inout),depend(n) :: v
+        integer dimension(n),intent(inout),depend(n) :: species
+        integer, optional,intent(in),check(shape(r,1)==n),depend(r) :: n=shape(r,1)
+        integer intent(in) :: i
+        integer intent(in) :: j
+    end subroutine exchange_solvent
+    subroutine sort_solvent(r,v,species,cells,par_list,n,nx,ny,nz) ! in pyMPCD/MPCD_f.f90:mpcd_f
+        double precision dimension(3,n),intent(inout) :: r
+        double precision dimension(3,n),intent(inout),depend(n) :: v
+        integer dimension(n),intent(inout),depend(n) :: species
+        integer dimension(nz,ny,nx),intent(in) :: cells
+        integer dimension(64,nz,ny,nx),intent(in),depend(nz,ny,nx) :: par_list
+        integer, optional,intent(in),check(shape(r,1)==n),depend(r) :: n=shape(r,1)
+        integer, optional,intent(in),check(shape(cells,2)==nx),depend(cells) :: nx=shape(cells,2)
+        integer, optional,intent(in),check(shape(cells,1)==ny),depend(cells) :: ny=shape(cells,1)
+        integer, optional,intent(in),check(shape(cells,0)==nz),depend(cells) :: nz=shape(cells,0)
+    end subroutine sort_solvent
+end module mpcd_f
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/
