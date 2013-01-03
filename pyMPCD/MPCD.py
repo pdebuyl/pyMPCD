@@ -25,7 +25,7 @@ MPCD.py - This file contains the base class to perform MPCD simulations: MPCD_sy
 
 import numpy as np
 
-from MPCD_f import mpcd_mod
+from MPCD_f import mpcd_f as mpcd_mod
 
 # Define constants
 BC_PERIODIC=0

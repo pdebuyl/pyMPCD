@@ -21,11 +21,48 @@
 !! The subroutines are given all variables explicitly, so that the code does not
 !! depend on the setting of global variables in the Fortran module.
 
-module mpcd_mod
+module MPCD_f
   implicit none
 
+  !> Type defining the properties of the walls in a MPCD box.
+  type walls_t
+     !> Velocity of the walls.
+     double precision :: v(3,2,3)
+     !> Temperature.
+     double precision :: T(2,3)
+     !> Boundary conditions.
+     integer :: BC(3)
+  end type walls_t
+
+  !> Module wide definition of the walls.
+  type(walls_t) :: walls
+
 contains
-  
+
+  subroutine wrap_set_walls(v, T, BC)
+    implicit none
+    double precision, intent(in) :: v(3,2,3)
+    double precision, intent(in) :: T(2,3)
+    integer, intent(in) :: BC(3)
+
+    call set_walls(walls, v, T, BC)
+
+  end subroutine wrap_set_walls
+
+!f2py skip
+  subroutine set_walls(w, v, T, BC)
+    implicit none
+    type(walls_t), intent(out) :: w
+    double precision, intent(in) :: v(3,2,3)
+    double precision, intent(in) :: T(2,3)
+    integer, intent(in) :: BC(3)
+
+    w % v = v
+    w % T = T
+    w % BC = BC
+
+  end subroutine set_walls
+
   !> Advances the particles according to their velocities.
   !!
   !! @param r fortran-ordered view of the positions of the MPCD particles.
@@ -165,5 +202,5 @@ contains
 
   end subroutine sort_solvent
 
-end module mpcd_mod
+end module MPCD_f
 
