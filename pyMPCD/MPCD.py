@@ -321,9 +321,8 @@ class MPCD_system():
                         part = self.par_list[ci,cj,ck,i]
                         T_local += self.so_mass[self.so_species[part]]*((self.so_v[part,:]-v_local)**2).sum()
                     if (n_local>1):
-                        self.cells_temperature[ci,cj,ck] = T_local/(3.*(n_local-1))
-                    elif (n_local==1):
-                        self.cells_temperature[ci,cj,ck] = 0.
+                        T_local /= 3.*(n_local-1)
+                    self.cells_temperature[ci,cj,ck] = T_local
 
     def MPCD_step_axis(self):
         """
